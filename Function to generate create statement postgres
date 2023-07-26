@@ -1,0 +1,32 @@
+CREATE OR REPLACE FUNCTION generate_create_table_statement(p_table_name text)
+  RETURNS text AS
+$BODY$
+DECLARE
+  v_table_ddl   text;
+  column_record record;
+BEGIN
+  FOR column_record IN 
+    SELECT 
+      a.attname AS column_name,
+      pg_catalog.format_type(a.atttypid, a.atttypmod) AS column_type
+    FROM
+      pg_catalog.pg_attribute a
+    WHERE
+      a.attnum > 0
+      AND NOT a.attisdropped
+      AND a.attrelid = (
+        SELECT c.oid
+        FROM pg_catalog.pg_class c
+        LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+        WHERE c.relname ~ ('^('||p_table_name||')$')
+          AND pg_catalog.pg_table_is_visible(c.oid)
+      )
+  LOOP
+    v_table_ddl := v_table_ddl || column_record.column_name || ' ' || column_record.column_type || ',';
+  END LOOP;
+
+  v_table_ddl := 'CREATE TABLE ' || p_table_name || ' (' || rtrim(v_table_ddl, ',') || ');';
+  RETURN v_table_ddl;
+END;
+$BODY$
+LANGUAGE plpgsql;
