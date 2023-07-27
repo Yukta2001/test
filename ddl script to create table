@@ -1,0 +1,27 @@
+SELECT 
+    'CREATE TABLE ' || t.table_name || E'\n(\n' || 
+    string_agg(
+        E'\t' || column_name || ' ' || data_type || 
+        coalesce('(' || character_maximum_length || ')', '') || 
+        case when is_nullable = 'NO' then ' NOT NULL' else '' end ||
+        case when column_default is not null then ' DEFAULT ' || column_default else '' end, 
+        E',\n'
+    ) || E',\n\t' ||
+    string_agg(
+        distinct 'PRIMARY KEY (' || string_agg(kcu.column_name::text, ', ') OVER (PARTITION BY t.table_name) || ')',
+        E',\n'
+    ) || E'\n);\n' as create_table_statement
+FROM 
+    information_schema.tables t
+LEFT JOIN 
+    information_schema.columns c ON c.table_name = t.table_name AND c.table_schema = t.table_schema
+LEFT JOIN 
+    information_schema.table_constraints tc ON tc.table_name = t.table_name AND tc.table_schema = t.table_schema AND tc.constraint_type = 'PRIMARY KEY'
+LEFT JOIN 
+    information_schema.key_column_usage kcu ON kcu.table_name = t.table_name AND kcu.table_schema = t.table_schema AND kcu.constraint_name = tc.constraint_name
+WHERE 
+    t.table_schema = 'public' -- change to your schema
+GROUP BY 
+    t.table_name
+ORDER BY 
+    t.table_name;
