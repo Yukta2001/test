@@ -33,4 +33,10 @@ LEFT JOIN
             information_schema.table_constraints tc ON tc.constraint_name = kcu.constraint_name
         WHERE 
             tc.constraint_type = 'PRIMARY KEY'
-    ) pk ON pk.table
+    ) pk ON pk.table_name = t.table_name AND pk.table_schema = t.table_schema AND pk.column_name = c.column_name
+WHERE 
+    t.table_schema = 'public' -- specify your schema name here
+GROUP BY 
+    t.table_name, pk.constraint_type
+ORDER BY 
+    t.table_name;
