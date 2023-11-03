@@ -1,0 +1,39 @@
+ysr.empnl_speciality_qst_mst
+
+ysr.empnl_column_mst
+
+{'is_agree':1}
+{'numbers':2}
+{'area':3}
+{'availability':4}
+{'attachments':5}
+{'make':6}
+{'date_of_purchase':7}
+{'serial_no':8}
+{'amc_coverage_expiry_date':9}
+{'in_house_tie_up':10}
+{'tie_up_facility_name':11}
+{'basic_qualification':12}
+{'diploma':13}
+{'pg':14}
+{'super_speciality':15}
+{'registration_no':16}
+{'experience':17}
+{'in_house_on_call':18}
+{'contact_no':19}
+{'email_id':20}
+{'name':21}
+{'shift_type':22}
+{'shift_hrs':23}
+{'shift_timing_from':24}
+{'shift_timing_to':25}
+
+
+#NEW_TABLE
+CREATE TABLE empnl_qst_col_mapping_mst
+(
+	qst_col_id BIGSERIAL PRIMARY KEY,
+	qst_id INTEGER REFERENCES ysr.empnl_qst_mst(qst_id) NOT NULL,
+	col_id INTEGER REFERENCES ysr.empnl_column_mst(col_id) NOT NULL,
+	is_active boolean DEFAULT true
+)
