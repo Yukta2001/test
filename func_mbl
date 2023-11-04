@@ -1,0 +1,26 @@
+CREATE OR REPLACE FUNCTION update_mobile_number(card_type VARCHAR2, new_mobile_no VARCHAR2) RETURN NUMBER AS
+BEGIN
+  -- Use a CASE statement to determine which tables to update based on the card type
+  CASE card_type
+    WHEN 'Type1' THEN
+      -- Update the first table
+      UPDATE table1 SET mobile_number = new_mobile_no WHERE card_type = 'Type1';
+    WHEN 'Type2' THEN
+      -- Update the second table
+      UPDATE table2 SET mobile_number = new_mobile_no WHERE card_type = 'Type2';
+    WHEN 'Type3' THEN
+      -- Update the third table
+      UPDATE table3 SET mobile_number = new_mobile_no WHERE card_type = 'Type3';
+    WHEN 'Type4' THEN
+      -- Update the fourth table
+      UPDATE table4 SET mobile_number = new_mobile_no WHERE card_type = 'Type4';
+    ELSE
+      -- Handle other cases or raise an error if needed
+      -- You can customize this part based on your requirements
+  END CASE;
+
+  COMMIT; -- Commit the changes
+
+  RETURN 1; -- Return 1 if the update is successful
+END;
+/
