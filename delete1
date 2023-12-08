@@ -1,0 +1,6 @@
+DELETE FROM tmp_final_argsri_card_print_image_new
+WHERE UHID_VALUE IN(
+SELECT DISTINCT(UHID_VALUE) FROM tmp_final_argsri_card_print_image_new
+WHERE IS_FAMILY_HEAD = '1'
+GROUP BY UHID_VALUE
+HAVING COUNT(UHID_VALUE)>1);
