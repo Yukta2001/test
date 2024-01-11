@@ -1,0 +1,18 @@
+CREATE OR REPLACE FUNCTION insert_speciality_qst_column_mapping(
+    s_qst_ids INTEGER[], 
+    static_col_id INTEGER
+)
+RETURNS VOID AS
+$$
+BEGIN
+    FOR s_qst_id IN SELECT unnest(s_qst_ids) 
+    LOOP
+        INSERT INTO speciality_qst_column_mapping_mst (s_qst_id, col_id)
+        VALUES (s_qst_id, static_col_id);
+    END LOOP;
+END;
+$$
+LANGUAGE plpgsql;
+
+
+SELECT insert_speciality_qst_column_mapping('{1, 2, 3}', 4);
