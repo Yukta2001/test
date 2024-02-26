@@ -1,0 +1,30 @@
+[12:57 AM] Nambiar, Sarath
+- multiple parameters in different combinations
+
+- set 5-6 paramters
+ 
+3 lets say
+
+- location
+
+- department
+
+- employee type
+ 
+ 
+mandatory or not is going to be against the combination
+ 
+ 
+SELECT leave_id, is_mandatory from leave_filter_value_mapping
+
+WHERE filter_value_id IN (
+
+SELECT filter_value_id FRM usr_mst a
+
+join filter_value_mapping b ON a.value_id = b.location AND filter_id = 1
+
+join filter_value_mapping c ON a.value_id = c.department AND filter_id = 2
+
+join filter_value_mapping d ON a.value_id = d.employment_type  AND filter_id = 3
+
+);
