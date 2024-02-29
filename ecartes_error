@@ -1,0 +1,20 @@
+
+SELECT count (uhid_value) FROM 
+
+(select  b.uhid_value,a.uid_no,a.resident_id,a.relation_name from asrit_family_cs_ap a,asrit_patient_cs_ap b 
+where a.householdcardno=b.householdcardno and a.ACTIVE_YN = 'Y'
+
+UNION ALL
+
+select  b.uhid_value,a.uid_no,a.resident_id,a.relation_name from asrit_janmabhoomi_family a,asrit_janmabhoomi_patient b 
+where a.temp_card_num=b.temp_card_num and a.ACTIVE_YN = 'Y'
+
+UNION ALL
+
+select  b.uhid_value,a.uid_no,a.resident_id,a.relation_name from asrit_tap_family_ap a, asrit_tap_patient_ap b 
+where a.temp_card_num=b.temp_card_num and a.ACTIVE_YN = 'Y')
+
+WHERE uhid_value IN (SELECT uhid FROM tmp_ecartes_error_uhids)
+                            
+                            
+                            
