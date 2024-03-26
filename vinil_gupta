@@ -1,0 +1,122 @@
+CREATE TABLE products (
+  product_id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  category VARCHAR(255),
+  unit_type VARCHAR(10) CHECK (unit_type IN ('integer', 'decimal')),
+  stock INTEGER DEFAULT 0,
+  unit_price DECIMAL (10,2) NOT NULL
+);
+CREATE TABLE sales (
+  sale_id SERIAL PRIMARY KEY,
+  product_id INTEGER REFERENCES products(product_id) NOT NULL,
+  quantity DECIMAL(10,2) NOT NULL,
+  payment_method VARCHAR(20) CHECK (payment_method IN ('card', 'upi', 'cash')),
+  total_price DECIMAL(10,2),
+  sale_date DATE DEFAULT CURRENT_DATE
+);
+CREATE TABLE damaged_items (
+  damage_id SERIAL PRIMARY KEY,
+  product_id INTEGER REFERENCES products(product_id) NOT NULL,
+  quantity DECIMAL(10,2) NOT NULL,
+  damage_date DATE DEFAULT CURRENT_DATE,
+  damage_reason VARCHAR(255)  -- Optional: Reason for damage
+);
+CREATE TABLE approval (
+	approval_id SERIAL PRIMARY KEY,
+	sale_id INT REFERENCES sales(sale_id),
+	product_id INTEGER REFERENCES products(product_id) NOT NULL,
+  	quantity DECIMAL(10,2) NOT NULL,
+  	payment_method VARCHAR(20) CHECK (payment_method IN ('card', 'upi', 'cash')),
+  	total_price DECIMAL(10,2) NOT NULL,
+  	sale_date DATE DEFAULT CURRENT_DATE,
+	approval_status BOOLEAN 
+);
+CREATE OR REPLACE FUNCTION calculate_total_value()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.total_value := NEW.quantity * (SELECT price FROM products WHERE product_id = NEW.product_id);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+CREATE TRIGGER update_total_value
+BEFORE INSERT OR UPDATE OF product_id, quantity ON orders
+FOR EACH ROW
+EXECUTE FUNCTION calculate_total_value();
+CREATE OR REPLACE FUNCTION update_stock(sale_id INTEGER)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE products
+  SET stock = stock - s.quantity
+  FROM sales s
+  WHERE s.sale_id = $1 AND products.product_id = s.product_id;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE FUNCTION reduce_damaged_stock(damage_id INTEGER)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE products p
+  SET stock = stock - di.quantity
+  FROM damaged_items di
+  WHERE di.damage_id = $1 AND p.product_id = di.product_id;
+END;
+$$ LANGUAGE plpgsql;
+CREATE FUNCTION cash_payment_pending_approval()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.payment_method = 'cash' AND NEW.total_price > 10000 THEN
+  INSERT INTO approval(sale_id,product_id, quantity, unit_price, payment_method, total_price,approval_status)
+  VALUES(NEW.sale_id,NEW.product_id, NEW.quantity, NEW.unit_price, NEW.payment_method, NEW.total_price,FALSE);
+  RETURN NULL;
+  ELSE 
+  RETURN NEW;
+  END IF;
+  END;
+$$ LANGUAGE plpgsql;
+
+CREATE FUNCTION insert_approved_sales()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.approval_status = TRUE THEN
+  INSERT INTO sales(sale_id,product_id, quantity,payment_method, total_price)
+  SELECT
+  FROM approval a
+  WHERE a.approval_status=TRUE;
+  END IF;
+  RETURN NEW;
+  END;
+$$ LANGUAGE plpgsql;
+CREATE TRIGGER cash_payment_trigger
+AFTER INSERT ON sales
+FOR EACH ROW
+EXECUTE PROCEDURE cash_payment_pending_approval();
+CREATE TRIGGER cash_payment_transfer
+AFTER INSERT ON approval
+FOR EACH ROW
+EXECUTE PROCEDURE insert_approved_sales();
+
+
+INSERT INTO products (name, category, unit_type, stock, unit_price)
+VALUES ('Toothbrush', 'Personal Care', 'integer', 15,30.00),
+       ('Orange', 'Fruits', 'decimal', 10.0,15.00),
+       ('Bread', 'Bakery', 'integer', 20,30.00),
+       ('Sugar', 'Cooking Essentials', 'decimal', 5.0,25.00),
+       ('Eggs', 'Dairy', 'integer', 12,48.00),
+       ('Noodles', 'Instant Food', 'integer', 30,30.00),
+       ('Shampoo (Refill)', 'Personal Care', 'integer', 8,2.00),
+       ('Laundry Detergent', 'Cleaning Supplies', 'decimal', 2.5,50.00),
+       ('Coffee', 'Beverages', 'decimal', 1.5,30.00),
+       ('Tea', 'Beverages', 'decimal', 2.0,15.00);
+INSERT INTO sales (product_id,quantity,  payment_method)
+VALUES (1, 2, 'card'),  -- Shampoo (2 units)
+       (3, 1.5, 'upi'),  -- Bread (1.5 units)
+       (4,2.0, 'cash'),  -- Sugar (2 kg)
+       (5, 6,'card'),  -- Eggs (6 units)
+       (6, 5, 'cash'),  -- Noodles (5 packets)
+       (2, 3.0, 'upi'),  -- Oranges (3 kg)
+       (7, 1, 'cash');  -- Shampoo (Refill) (1 unit)
+INSERT INTO damaged_items (product_id, quantity, damage_reason)
+VALUES (3, 0.5, 'Expired'),  -- Bread (0.5 units)
+       (8, 0.75, 'Leaking Container'),  -- Laundry Detergent (0.75 kg)
+       (10, 0.25, 'Broken Package');  -- Tea (0.25 kg)
+SELECT * FROM sales;
+SELECT * FROM products;
