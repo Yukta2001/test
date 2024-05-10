@@ -1,0 +1,6 @@
+URL : http://push161.sps.ap.gov.in/ThirdParty/api/Service/aarogyasree_uid_details
+Method : POST
+
+Request body: {
+    "aadhaar_number" : "fc21c7c86a09bde958234d65a499ad57eb9734287b92aa85b135c826efaebf38"
+}
