@@ -1,48 +1,43 @@
-import os
 import paramiko
 import subprocess
-#Function to connect to server
-def server_connection():
+
+def switch_user():
     try:
         hostname = '10.48.19.56' 
         port = 5522
         username = 'kpmg'
         password = '*Wur8ks%!YQjq9'
 
-        #Create new SSH clients
-        client = paramiko.SSHClient()
+        # Create new SSH client
+        ssh_client = paramiko.SSHClient()
 
-        #Automatically add host keys
-        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        # Automatically add host keys
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-        #Connect to server
-        client.connect(hostname,port,username,password)
+        # Connect to server
+        ssh_client.connect(hostname, port, username, password)
 
         print('Connected')
-        return client
-        # client.close()
-    except paramiko.AuthenticationException:
-        print('Authentication failed, Please check username and password')
-    except paramiko.SSHException as e:
-        print('SSH connection failed',e)
-    return None
 
-def switch_user():
-    try:
+        # Command to switch user
         command = "sudo su"
-        subprocess.run(command, check=True)
+        subprocess.run(command, shell=True)
+        
+        ssh_client.close()  # Close SSH connection after executing the command
         print("Switched to root user successfully")
         return True
-    except subprocess.CalledProcessError as e:
-        print("Failed to switch user to root user:", e)
-        return False
-    
-ssh_client = server_connection()
 
-if ssh_client:
-    try:
-        if switch_user():
-            print("OKAY")
-    finally:
-         print("NOT OKAY")
-         ssh_client.close()
+    except paramiko.AuthenticationException:
+        print('Authentication failed, Please check username and password')
+        return False
+    except paramiko.SSHException as e:
+        print('SSH connection failed', e)
+        return False
+    except Exception as e:
+        print("Error:", e)
+        return False
+
+if switch_user():
+    print("OKAY")
+else:
+    print("NOT OKAY")
