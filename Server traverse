@@ -1,71 +1,48 @@
+import os
 import paramiko
-
-# Function to establish SSH connection
-def establish_ssh_connection(hostname, port, username, password):
+import subprocess
+#Function to connect to server
+def server_connection():
     try:
-        # Create a new SSH client
+        hostname = '10.48.19.56' 
+        port = 5522
+        username = 'kpmg'
+        password = '*Wur8ks%!YQjq9'
+
+        #Create new SSH clients
         client = paramiko.SSHClient()
 
-        # Automatically add host keys
+        #Automatically add host keys
         client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-        # Connect to the server
-        client.connect(hostname, port, username, password)
+        #Connect to server
+        client.connect(hostname,port,username,password)
 
-        print("Connected to the server successfully!")
-
+        print('Connected')
         return client
-
+        # client.close()
     except paramiko.AuthenticationException:
-        print("Authentication failed, please verify your username and password.")
+        print('Authentication failed, Please check username and password')
     except paramiko.SSHException as e:
-        print("SSH connection failed:", e)
-
+        print('SSH connection failed',e)
     return None
 
-# Function to switch to root user
-def switch_to_root_user(ssh_client):
+def switch_user():
     try:
-        # Execute command to switch to root user
-        stdin, stdout, stderr = ssh_client.exec_command('sudo su -')
-
-        # Check if the command executed successfully
-        if stderr.channel.recv_exit_status() != 0:
-            print("Failed to switch to root user:", stderr.read().decode())
-            return False
-
-        print("Switched to root user successfully!")
+        command = "sudo su"
+        subprocess.run(command, check=True)
+        print("Switched to root user successfully")
         return True
-
-    except Exception as e:
-        print("Error:", e)
+    except subprocess.CalledProcessError as e:
+        print("Failed to switch user to root user:", e)
         return False
-
-# Server credentials
-hostname = 'your_server_hostname'
-port = 22  # default SSH port
-username = 'your_KPMG_username'
-password = 'your_KPMG_password'
-
-# Establish SSH connection as KPMG user
-ssh_client = establish_ssh_connection(hostname, port, username, password)
+    
+ssh_client = server_connection()
 
 if ssh_client:
     try:
-        # Switch to root user
-        if switch_to_root_user(ssh_client):
-            # Get current directory path
-            stdin, stdout, stderr = ssh_client.exec_command('pwd')
-            current_directory = stdout.read().decode().strip()
-            print("Current directory path:", current_directory)
-
-            # List all folders in the current directory
-            stdin, stdout, stderr = ssh_client.exec_command('ls -d */')
-            folders = stdout.read().decode().split()
-            print("Folders in the current directory:")
-            for folder in folders:
-                print(folder)
-
+        if switch_user():
+            print("OKAY")
     finally:
-        # Close the SSH connection
-        ssh_client.close()
+         print("NOT OKAY")
+         ssh_client.close()
