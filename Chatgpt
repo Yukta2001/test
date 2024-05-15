@@ -10,14 +10,14 @@ def traverse_directories(ssh_client, base_directory):
             item_path = base_directory + '/' + item.filename
 
             if stat.S_ISDIR(item.st_mode):
-                # It's a directory, check if it matches the pattern
+                # It's a directory
                 if re.match(r'^NAS.*-AP-Production$', item.filename):
-                    # Recursively traverse
+                    # Directory matches the pattern, traverse inside
                     print("Directory:", item_path)
                     traverse_directories(ssh_client, item_path)
                 else:
-                    # Continue traversing if it's not the matching pattern
-                    traverse_directories(ssh_client, item_path)
+                    # Directory doesn't match the pattern, skip it
+                    print("Skipping directory:", item_path)
             else:
                 # It's a file, print its path
                 print("File:", item_path)
