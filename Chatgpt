@@ -1,0 +1,28 @@
+def traverse_directories(ssh_client, base_directory):
+    try:
+        sftp = ssh_client.open_sftp()
+
+        # List directory contents
+        dir_contents = sftp.listdir_attr(base_directory)
+
+        # Traverse directory contents
+        for item in dir_contents:
+            item_path = base_directory + '/' + item.filename
+
+            if stat.S_ISDIR(item.st_mode):
+                # It's a directory, check if it matches the pattern
+                if re.match(r'^NAS.*-AP-Production$', item.filename):
+                    # Recursively traverse
+                    print("Directory:", item_path)
+                    traverse_directories(ssh_client, item_path)
+                else:
+                    # Continue traversing if it's not the matching pattern
+                    traverse_directories(ssh_client, item_path)
+            else:
+                # It's a file, print its path
+                print("File:", item_path)
+
+        sftp.close()
+
+    except Exception as e:
+        print("Error:", e)
