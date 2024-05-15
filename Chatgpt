@@ -50,42 +50,22 @@ def nas_directories(ssh_client, base_directory):
                 if re.match(r'^NAS.*-AP-Production$', item.filename):
                     match_dirctories.append(item_path)
                     # Recursively traverse
-                    print("Base Directory:", match_dirctories)
         sftp.close()
-
+        print("Base Directory:", match_dirctories)
     except Exception as e:
         print("Error 1:", e)
     return match_dirctories
 
-def traverse_directories(ssh_client, directory):
-    m_dic = nas_directories(ssh_client,base_directory)
-
-    for directory_name in m_dic:
-        directory_path = base_directory + '/' + directory_name
-        traverse_recursive(ssh_client,directory_path)
-
-def traverse_recursive(ssh_client, directory):
+def traverse_directories(ssh_client, base_directory):
+    m_dir = nas_directories(ssh_client,base_directory)
     try:
-        sftp = ssh_client.open_sftp()
-        dir_contents = sftp.listdir_attr(directory)
-
-        for item in dir_contents:
-            item_path = directory + '/' + item.filename
-
-            if stat.S_ISDIR(item.st_mode):
-                print("Directory:", item_path)
-
-                traverse_recursive(ssh_client,item_path)
-            else:
-
-                print("File:",item_path)
-        sftp.close()
-    except Exception as e:
-        print("Error 2:",e)    
+        for item in m_dir:
+            command = f"find {item} -type f | wc -l"
+            ssh_client.excute
 
 ssh_client = server_connection()
 if ssh_client:
     base_directory = "/"  # Specify the base directory
-    traverse_directories(ssh_client, base_directory)
+    nas_directories(ssh_client, base_directory)
 else:
     print('Connection failed, check the error messages')
