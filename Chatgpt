@@ -1,14 +1,16 @@
 DECLARE
   v_search_term VARCHAR2(100) := 'your_table_name';
-  v_query CLOB;
+  v_query LONG;
+  v_result VARCHAR2(4000); -- Assuming the result can fit into VARCHAR2 size
 BEGIN
-  SELECT TO_LOB(query) INTO v_query
-  FROM all_mviews
-  WHERE LOWER(query) LIKE '%' || LOWER(v_search_term) || '%';
-
-  -- Process v_query as needed
-  -- For example, you can print or process further based on the matched mview_name
-  
-  DBMS_OUTPUT.PUT_LINE('Query found: ' || v_query);
+  -- Execute dynamic SQL to fetch LONG data
+  FOR rec IN (SELECT query FROM all_mviews WHERE LOWER(query) LIKE '%' || LOWER(v_search_term) || '%') LOOP
+    v_query := rec.query;
+    -- Process the query result as needed
+    DBMS_OUTPUT.PUT_LINE('Query: ' || v_query);
+  END LOOP;
+EXCEPTION
+  WHEN OTHERS THEN
+    DBMS_OUTPUT.PUT_LINE('Error: ' || SQLERRM);
 END;
 /
