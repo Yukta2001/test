@@ -5,6 +5,7 @@ DECLARE
     v_pos NUMBER;
     v_query_length NUMBER;
     v_query CLOB;
+    v_buffer VARCHAR2(8000); -- Buffer to store concatenated chunks
     v_found BOOLEAN;
 BEGIN
     FOR rec IN (SELECT viewname, query FROM user_mviews) LOOP
@@ -12,10 +13,18 @@ BEGIN
         v_query_length := DBMS_LOB.GETLENGTH(v_query);
         v_pos := 1;
         v_found := FALSE;
+        v_buffer := ''; -- Initialize the buffer
 
         WHILE v_pos <= v_query_length AND NOT v_found LOOP
             v_query_chunk := DBMS_LOB.SUBSTR(v_query, v_chunk_size, v_pos);
-            IF LOWER(v_query_chunk) LIKE '%' || LOWER(v_target_string) || '%' THEN
+            v_buffer := v_buffer || v_query_chunk; -- Concatenate chunks to buffer
+
+            -- If buffer length exceeds twice the chunk size, trim it
+            IF LENGTH(v_buffer) > 2 * v_chunk_size THEN
+                v_buffer := SUBSTR(v_buffer, -2 * v_chunk_size);
+            END IF;
+
+            IF LOWER(v_buffer) LIKE '%' || LOWER(v_target_string) || '%' THEN
                 v_found := TRUE;
             ELSE
                 v_pos := v_pos + v_chunk_size;
