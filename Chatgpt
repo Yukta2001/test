@@ -1,34 +1,31 @@
-import paramiko
-import time
+DECLARE
+    v_target_string VARCHAR2(100) := 'your_search_string'; -- String you want to match
+    v_chunk_size NUMBER := 4000; -- Adjust chunk size based on your requirements
+    v_query_chunk VARCHAR2(4000);
+    v_pos NUMBER;
+    v_query_length NUMBER;
+    v_query VARCHAR2(32767);
+    v_found BOOLEAN;
+BEGIN
+    FOR rec IN (SELECT viewname, query FROM user_mviews) LOOP
+        v_query := rec.query;
+        v_query_length := LENGTH(v_query);
+        v_pos := 1;
+        v_found := FALSE;
 
-host = "10.9.39.217"
-username = "oracle"
-password = "oracle#123"
+        WHILE v_pos <= v_query_length AND NOT v_found LOOP
+            v_query_chunk := SUBSTR(v_query, v_pos, v_chunk_size);
+            IF INSTR(LOWER(v_query_chunk), LOWER(v_target_string)) > 0 THEN
+                v_found := TRUE;
+            ELSE
+                v_pos := v_pos + v_chunk_size;
+            END IF;
+        END LOOP;
 
-client = paramiko.client.SSHClient()
-client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-client.connect(host, username=username, password=password)
-shell = client.invoke_shell()
-
-def link_cmd(cmd,wait=1):
-    shell.send(cmd + '\n')
-    time.sleep(wait)
-    while shell.recv_ready():
-        output = shell.recv(1024).decode('utf-8')
-        return output
-
-
-env = link_cmd('. oraenv')
-print(env)
-sid = link_cmd('pysrrtdb')
-print(sid)
-path = link_cmd('cd /home/oracle/scripts/logs/')
-print(path)
-#jobfind = link_cmd('ls -ltrh jobmviews*')
-#print(jobfind)
-job = str(link_cmd('ls jobmviews* | tail -n 1'))
-x = job.replace("ls jobmviews* | tail -n 1","").strip()
-# print(f"grep -C 4 'ERROR' {x}")
-err = link_cmd(f"grep -C 4 'ERROR' {x}")
-print(err)
-client.close()
+        IF v_found THEN
+            DBMS_OUTPUT.PUT_LINE('String found in view: ' || rec.viewname);
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('String not found in view: ' || rec.viewname);
+        END IF;
+    END LOOP;
+END;
