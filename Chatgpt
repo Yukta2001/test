@@ -1,31 +1,13 @@
 DECLARE
     v_target_string VARCHAR2(100) := 'your_search_string'; -- String you want to match
-    v_chunk_size NUMBER := 4000; -- Adjust chunk size based on your requirements
-    v_query_chunk VARCHAR2(4000);
-    v_pos NUMBER;
-    v_query_length NUMBER;
-    v_query VARCHAR2(32767);
-    v_found BOOLEAN;
+    v_search_string VARCHAR2(100);
 BEGIN
-    FOR rec IN (SELECT viewname, query FROM user_mviews) LOOP
-        v_query := rec.query;
-        v_query_length := LENGTH(v_query);
-        v_pos := 1;
-        v_found := FALSE;
+    -- Prepare the search string for the LIKE operator
+    v_search_string := '%' || v_target_string || '%';
 
-        WHILE v_pos <= v_query_length AND NOT v_found LOOP
-            v_query_chunk := SUBSTR(v_query, v_pos, v_chunk_size);
-            IF INSTR(LOWER(v_query_chunk), LOWER(v_target_string)) > 0 THEN
-                v_found := TRUE;
-            ELSE
-                v_pos := v_pos + v_chunk_size;
-            END IF;
-        END LOOP;
-
-        IF v_found THEN
-            DBMS_OUTPUT.PUT_LINE('String found in view: ' || rec.viewname);
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('String not found in view: ' || rec.viewname);
-        END IF;
+    FOR rec IN (SELECT viewname, query 
+                FROM user_mviews 
+                WHERE LOWER(query) LIKE LOWER(v_search_string)) LOOP
+        DBMS_OUTPUT.PUT_LINE('String found in view: ' || rec.viewname);
     END LOOP;
 END;
