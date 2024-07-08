@@ -5,7 +5,8 @@ DECLARE
     v_pos NUMBER;
     v_query_length NUMBER;
     v_query CLOB;
-    v_buffer VARCHAR2(8000); -- Buffer to store concatenated chunks
+    v_buffer VARCHAR2(4000); -- Buffer to store last part of the previous chunk
+    v_combined_chunk VARCHAR2(8000); -- Combined buffer and current chunk
     v_found BOOLEAN;
 BEGIN
     FOR rec IN (SELECT viewname, query FROM user_mviews) LOOP
@@ -17,16 +18,13 @@ BEGIN
 
         WHILE v_pos <= v_query_length AND NOT v_found LOOP
             v_query_chunk := DBMS_LOB.SUBSTR(v_query, v_chunk_size, v_pos);
-            v_buffer := v_buffer || v_query_chunk; -- Concatenate chunks to buffer
+            v_combined_chunk := v_buffer || v_query_chunk; -- Combine buffer and current chunk
 
-            -- If buffer length exceeds twice the chunk size, trim it
-            IF LENGTH(v_buffer) > 2 * v_chunk_size THEN
-                v_buffer := SUBSTR(v_buffer, -2 * v_chunk_size);
-            END IF;
-
-            IF LOWER(v_buffer) LIKE '%' || LOWER(v_target_string) || '%' THEN
+            IF LOWER(v_combined_chunk) LIKE '%' || LOWER(v_target_string) || '%' THEN
                 v_found := TRUE;
             ELSE
+                -- Update buffer with the last part of the current chunk
+                v_buffer := SUBSTR(v_query_chunk, -LENGTH(v_target_string));
                 v_pos := v_pos + v_chunk_size;
             END IF;
         END LOOP;
